@@ -11,10 +11,8 @@ def lpa_communities(G: nx.Graph, weight=None, seed=None):
     Return: communities: iteratable
     """
 
-    if not type(G) == (nx.DiGraph or nx.Graph):
+    if not (type(G) == nx.DiGraph or type(G) == nx.Graph):
         return set()
-
-    print("test")
     
     labels = {node: label for (label, node) in enumerate(G)}
     graph_is_weighted = nx.is_weighted(G)
