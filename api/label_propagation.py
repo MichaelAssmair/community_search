@@ -19,7 +19,7 @@ def lpa_communities(G: nx.Graph, weight=None, seed=None):
     labels = {node: label for (label, node) in enumerate(G)}
     graph_is_weighted = nx.is_weighted(G)
     nodes = list(labels)
-    random.seed = seed
+    random.seed(seed)
     finished = False
 
     while not finished:
