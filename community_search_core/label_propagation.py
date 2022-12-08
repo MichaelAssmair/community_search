@@ -15,9 +15,9 @@ def lpa_communities(G: nx.Graph, weight=None, seed=None):
         return set()
     
     labels = {node: label for (label, node) in enumerate(G)}
-    graph_is_weighted = nx.is_weighted(G)
     nodes = list(labels)
     random.seed(seed)
+
     finished = False
 
     while not finished:
@@ -28,7 +28,7 @@ def lpa_communities(G: nx.Graph, weight=None, seed=None):
             neighbor_labels = {label: 0 for label in labels.values()}
 
             for neighbor in G.adj[node]:
-                if graph_is_weighted:
+                if nx.is_weighted(G):
                     neighbor_labels[labels[neighbor]] += 1 * G.edges[node, neighbor]["weight"]
                 else:
                     neighbor_labels[labels[neighbor]] += 1
