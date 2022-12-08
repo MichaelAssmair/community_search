@@ -1,9 +1,14 @@
-"""Utileties"""
+"""Utilities"""
 
 import numpy as np
-from networkx.algorithms.community.community_utils import is_partition
+from networkx.algorithms.community import is_partition
+
 
 def modularity(G, communities):
+    """Berechnet die Modularität der Graphen G mit 
+    den übergebenen Communities
+    """
+
     if not isinstance(communities, list):
         communities = list(communities)
     if not is_partition(G, communities):
@@ -21,12 +26,16 @@ def modularity(G, communities):
     else:
         m = m / (len(G.edges)*2)
 
-    q = np.trace(m) - np.sum(np.matmul(m, m))
 
-    return q
+    return np.trace(m) - np.sum(np.matmul(m, m))
+
 
 
 def _idx_lookup(node, communities):
+    """Liefert den Index der Community, in der sich
+    der Knoten node befindet
+    """
+
     for idx, community in enumerate(communities):
         if node in community:
             return idx
