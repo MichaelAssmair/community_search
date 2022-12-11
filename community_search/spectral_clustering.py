@@ -14,33 +14,54 @@ def spectral_clustering(G: nx.Graph, k):
     dist_matrix = _dist_matrix(g)
 
     lap_matrix = dist_matrix - adj_matrix
+
     eigval, eigvec = scipy.sparse.linalg.eigsh(lap_matrix, k=k, which="SM")
 
-    k_means(eigvec, k)
+    clusters = k_means(eigvec, k)
+
+    return{node: cluster for node, cluster in zip(G.nodes, clusters)}
 
 
 def k_means(D, k):
     means = _choice_means(D, k)
-    clusters = {}
+    clusters = [0 for i in range(len(D))]
 
     finished = False
 
     while not finished:
         finished = True
         
-        for point in D:
-            tmp_dist = float("inf")
-            for mean in means:
+        for i, point in enumerate(D):
+            dist = float("inf")
+            new_mean = None
+            for n, mean in enumerate(means):
                 new_dist = np.linalg.norm(mean - point)
-                if new_dist < tmp_dist:
-                    tmp_dist = new_dist
-
-
-
-
-
+                if new_dist < dist:
+                    dist = new_dist
+                    new_mean = n
+                
+            if new_mean != clusters[i]:
+                clusters[i] = new_mean
+                finished = False
     
+    for n in range(k):
+        means[n] = [0 for i in range(k)]
+        count = 0
+        for j, point in enumerate(D):
+            if clusters[j] == n:
+                means[n] += D[j]
+                count += 1
+            
+        print(means[n])
+        means[n] = means[n]/count
+        print(means[n])
+
+    return clusters
+                    
+
 def _choice_means(D, k):
+    """Auswahl der Startpunkte"""
+
     means = []
     means.append(random.choice(D))
 
@@ -59,7 +80,7 @@ def _choice_means(D, k):
     return means
 
 
-def _adj_matrix(G: nx.Graph, weight=None):
+def _adj_matrix(G, weight=None):
     """Gewichtete Adjazenzmatrix"""
 
     adj_matrix = np.zeros(shape=(G.number_of_nodes(), G.number_of_nodes()))
@@ -77,7 +98,7 @@ def _adj_matrix(G: nx.Graph, weight=None):
     return adj_matrix
 
 
-def _dist_matrix(G: nx.Graph, weight=None):
+def _dist_matrix(G, weight=None):
     """Eine Diagonalmatrix"""
 
     dist_matrix = np.zeros(shape=(G.number_of_nodes(), G.number_of_nodes()))
@@ -94,19 +115,7 @@ def _dist_matrix(G: nx.Graph, weight=None):
 
 
 
-    
+print(spectral_clustering(nx.krackhardt_kite_graph(), 2))
 
-    
-
-
-
-
-(spectral_clustering(nx.karate_club_graph(), 3))
-
-#graph = nx.florentine_families_graph()
-#print(_adj_matrix(graph))
-#adj_mat = nx.adjacency_matrix(graph)
-#print(adj_mat)
-#graph.nodes["Medici"]["id"] = 1
-#print(*graph.nodes.items())
-#print(graph.edges)
+if dtype is None:
+    dtype = dtype_float
