@@ -5,12 +5,14 @@ from collections import deque
 import random
 import heapq
 from queue import PriorityQueue
+import timeit
 
 def girvan_newman(G: nx.Graph):
     """Algorithmus berechnet Communitys des Graphen G"""
 
     g = G.copy().to_undirected()
     num_communuties = nx.number_connected_components(g)
+
 
     while g.number_of_edges() > 0:
         betweenness = _edge_betweenness(g)
@@ -25,6 +27,8 @@ def _edge_betweenness(G: nx.Graph) -> dict:
     """berechnet die edge betweenness"""
 
     edges = {edge: 0.0 for edge in G.edges}
+
+    start_time = timeit.default_timer()
 
     for node in G.nodes:
         path_graph = nx.DiGraph()
@@ -50,6 +54,8 @@ def _edge_betweenness(G: nx.Graph) -> dict:
                     path_graph.nodes[adj_node]["weight"] += path_graph.nodes[next_node]["weight"]
                     path_graph.add_edge(next_node, adj_node)
                 
+        print("path", timeit.default_timer() - start_time)
+        start_time = timeit.default_timer()
 
         node_heap = PriorityQueue()
         for node in (node for node in path_graph.nodes if path_graph.out_degree(node) == 0):
@@ -81,5 +87,7 @@ def _edge_betweenness(G: nx.Graph) -> dict:
                 edges[edge] += path_graph.edges[edge]["betweenness"]/2
             else:
                 edges[(edge[1], edge[0])] += path_graph.edges[edge]["betweenness"]/2
+
+        print("between", timeit.default_timer() - start_time)
         
     return edges

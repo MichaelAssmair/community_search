@@ -11,7 +11,7 @@ def lpa_communities(G: nx.Graph, weight=None, seed=None):
     Return: communities: iteratable
     """
 
-    if not (type(G) == nx.DiGraph or type(G) == nx.Graph):
+    if type(G) not in {nx.Graph, nx.DiGraph}:
         return set()
     
     labels = {node: label for (label, node) in enumerate(G)}
@@ -28,8 +28,8 @@ def lpa_communities(G: nx.Graph, weight=None, seed=None):
             neighbor_labels = {label: 0 for label in labels.values()}
 
             for neighbor in G.adj[node]:
-                if nx.is_weighted(G):
-                    neighbor_labels[labels[neighbor]] += 1 * G.edges[node, neighbor]["weight"]
+                if nx.is_weighted(G, weight=weight):
+                    neighbor_labels[labels[neighbor]] += 1 * G.edges[node, neighbor][weight]
                 else:
                     neighbor_labels[labels[neighbor]] += 1
             

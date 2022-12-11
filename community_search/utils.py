@@ -1,10 +1,11 @@
 """Utilities"""
 
 import numpy as np
+import networkx as nx
 from networkx.algorithms.community import is_partition
 
 
-def modularity(G, communities):
+def modularity(G: nx.Graph, communities):
     """Berechnet die Modularität der Graphen G mit 
     den übergebenen Communities
     """
@@ -22,9 +23,9 @@ def modularity(G, communities):
                 m[i][_idx_lookup(neighbor, communities)] += 1
 
     if G.is_directed():       
-        m = m / (len(G.edges))
+        m = m / (G.number_of_edges())
     else:
-        m = m / (len(G.edges)*2)
+        m = m / (G.number_of_edges()*2)
 
 
     return np.trace(m) - np.sum(np.matmul(m, m))
