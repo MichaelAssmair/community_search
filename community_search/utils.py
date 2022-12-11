@@ -5,6 +5,7 @@
 from networkx.algorithms.community import is_partition
 import numpy as np
 
+__all__ = ["modularity"]
 
 def modularity(G, communities):
     """Berechnet die Modulatität des Graphen G anhand

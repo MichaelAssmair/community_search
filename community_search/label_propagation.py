@@ -6,6 +6,8 @@ import random
 import networkx as nx
 from networkx.utils import groups
 
+__all__ = ["lpa_communities"]
+
 
 def lpa_communities(G, weight=None, seed=None):
     """Sucht nach Communitys im Graphen G.
