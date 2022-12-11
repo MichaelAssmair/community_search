@@ -28,12 +28,12 @@ def lpa_communities(G, weight=None, seed=None):
 
     Returns
     -------
-    communities : Dictionary mit einem Label als Schlüsses und einem
-        Set von Knoten aus der selben Community als Wert. Wenn G kein
-        Networkx Graph ist, wird ein leeres Set zurückgegeben.
+    communities : Liste mit Sets von Knoten, die zur selben Community
+        Gehören. Wenn die übergeben Variable G kein Netwerkx Graph ist,
+        wird None zurückgegeben.
     """
     if not (type(G) == nx.DiGraph or type(G) == nx.Graph):
-        return set()
+        return None
 
     random.seed(seed)
     
