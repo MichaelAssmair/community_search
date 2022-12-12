@@ -1,9 +1,13 @@
 """spectral clustering algorithm"""
 
+# Author: Michael assmair
+
 import networkx as nx
+from networkx.utils import groups
 import random
 import numpy as np
 import scipy.sparse.linalg
+from sklearn.cluster import SpectralClustering
 
 def spectral_clustering(G: nx.Graph, k):
     """spectral clustering"""
@@ -18,8 +22,11 @@ def spectral_clustering(G: nx.Graph, k):
     eigval, eigvec = scipy.sparse.linalg.eigsh(lap_matrix, k=k, which="SM")
 
     clusters = k_means(eigvec, k)
+    print("my spec:    ", clusters)
 
-    return{node: cluster for node, cluster in zip(G.nodes, clusters)}
+    communities = {node: cluster for node, cluster in zip(G.nodes, clusters)}
+
+    return list(groups(communities).values())
 
 
 def k_means(D, k):
@@ -52,9 +59,7 @@ def k_means(D, k):
                 means[n] += D[j]
                 count += 1
             
-        print(means[n])
         means[n] = means[n]/count
-        print(means[n])
 
     return clusters
                     
@@ -81,7 +86,7 @@ def _choice_means(D, k):
 
 
 def _adj_matrix(G, weight=None):
-    """Gewichtete Adjazenzmatrix"""
+    """Gibt die gewichtete Adjazenzmatrix der Graphen G zurück."""
 
     adj_matrix = np.zeros(shape=(G.number_of_nodes(), G.number_of_nodes()))
 
@@ -99,7 +104,7 @@ def _adj_matrix(G, weight=None):
 
 
 def _dist_matrix(G, weight=None):
-    """Eine Diagonalmatrix"""
+    """Gibt die Gradmatrix des Graphen G zurück."""
 
     dist_matrix = np.zeros(shape=(G.number_of_nodes(), G.number_of_nodes()))
 
@@ -115,7 +120,10 @@ def _dist_matrix(G, weight=None):
 
 
 
-print(spectral_clustering(nx.krackhardt_kite_graph(), 2))
+graph = nx.les_miserables_graph()
 
-if dtype is None:
-    dtype = dtype_float
+clustering = SpectralClustering(n_clusters=11, affinity="precomputed").fit(_adj_matrix(graph))
+print("sklearn_spec", list(clustering.labels_))
+clustering.eigen_tol
+
+spectral_clustering(graph, 11)
