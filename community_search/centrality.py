@@ -1,8 +1,10 @@
-"""girvan and newman algorithm"""
+"""girvan-newman algorithm"""
+
+# Author: Michael Assmair
 
 import networkx as nx
 from collections import deque
-from queue import PriorityQueue
+import timeit
 
 def girvan_newman(G: nx.Graph):
     """Algorithmus berechnet Communitys des Graphen G"""
@@ -14,71 +16,51 @@ def girvan_newman(G: nx.Graph):
     while g.number_of_edges() > 0:
         betweenness = _edge_betweenness(g)
         max_betweenness = max(betweenness, key=betweenness.get)
+
         g.remove_edge(max_betweenness[0], max_betweenness[1])
+
         if num_communuties < nx.number_connected_components(g):
             num_communuties = nx.number_connected_components(g)
             yield nx.connected_components(g)
 
 
-def _edge_betweenness(G: nx.Graph) -> dict:
-    """berechnet die edge betweenness"""
+def _edge_betweenness(G: nx.Graph):
+    """Edge Betweenness"""
 
-    edges = {edge: 0.0 for edge in G.edges}
+    betweenness = {edge: 0.0 for edge in G.edges}
 
-    for node in G.nodes:
-        path_graph = nx.DiGraph()
-        path_graph.add_nodes_from(G)
+    for start_node in G.nodes:
+        nodes = {node: {"dist": None, "weight": None} for node in G.nodes}
+        edges = {edge: 0.0 for edge in G.edges}
+        nodes[start_node]["dist"] = 0
+        nodes[start_node]["weight"] = 1
 
-        path_graph.nodes[node]["dist"] = 0
-        path_graph.nodes[node]["weight"] = 1
+        queue = deque([start_node])
 
-        queue = deque([node])
-        
         while queue:
             next_node = queue.popleft()
-            
+
             for adj_node in G.adj[next_node]:
 
-                if "dist" not in path_graph.nodes[adj_node]:
-                    path_graph.nodes[adj_node]["dist"] = path_graph.nodes[next_node]["dist"] + 1
-                    path_graph.nodes[adj_node]["weight"] = path_graph.nodes[next_node]["weight"]
-                    path_graph.add_edge(next_node, adj_node)
+                if nodes[adj_node]["dist"] == None:
+                    nodes[adj_node]["dist"] = nodes[next_node]["dist"] + 1
+                    nodes[adj_node]["weight"] = nodes[next_node]["weight"]
                     queue.append(adj_node)
 
-                elif path_graph.nodes[adj_node]["dist"] == path_graph.nodes[next_node]["dist"] + 1:
-                    path_graph.nodes[adj_node]["weight"] += path_graph.nodes[next_node]["weight"]
-                    path_graph.add_edge(next_node, adj_node)
+                elif nodes[adj_node]["dist"] == nodes[next_node]["dist"] + 1:
+                    nodes[adj_node]["weight"] += nodes[next_node]["weight"]
 
+        for node, _ in sorted(nodes.items(), key=lambda item: item[1]["dist"], reverse=True):
+            weight_sum = 1
 
-        node_heap = PriorityQueue()
-        for node in (node for node in path_graph.nodes if path_graph.out_degree(node) == 0):
-            for pred_node in path_graph.predecessors(node):
-                path_graph.edges[pred_node, node]["betweenness"] = (
-                    path_graph.nodes[pred_node]["weight"] / path_graph.nodes[node]["weight"]
-                    )
-                
-                if (-path_graph.nodes[pred_node]["dist"], pred_node) not in node_heap.queue:
-                    node_heap.put((-path_graph.nodes[pred_node]["dist"], pred_node))
-        
+            for adj_node in G.adj[node]:
+                edge = (node, adj_node) if node < adj_node else (adj_node, node)
+                weight_sum += edges[edge]
+            
+            for adj_node in G.adj[node]:
+                edge = (node, adj_node) if node < adj_node else (adj_node, node)
+                if nodes[node]["dist"] > nodes[adj_node]["dist"]:
+                    edges[edge] = weight_sum * nodes[adj_node]["weight"]/nodes[node]["weight"]
+                    betweenness[edge] += edges[edge]
 
-        while not node_heap.empty():
-            succ_node = node_heap.get()[1]
-            for pred_node in path_graph.predecessors(succ_node):
-                edge_weight_sum = (
-                    sum(path_graph.edges[edge]["betweenness"] 
-                    for edge in path_graph.out_edges(succ_node)) + 1
-                    )
-
-                path_graph.edges[pred_node, succ_node]["betweenness"] = (
-                    edge_weight_sum * (path_graph.nodes[pred_node]["weight"] / 
-                    path_graph.nodes[succ_node]["weight"])
-                    )
-                node_heap.put((-path_graph.nodes[pred_node]["dist"], pred_node))
-
-        for edge in path_graph.edges:
-            if edge in edges.keys():
-                edges[edge] += path_graph.edges[edge]["betweenness"]/2
-            else:
-                edges[(edge[1], edge[0])] += path_graph.edges[edge]["betweenness"]/2
-        
-    return edges
+    return betweenness
