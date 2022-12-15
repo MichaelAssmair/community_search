@@ -1,15 +1,29 @@
 """Utilities"""
 
-import numpy as np
+# Authon: Michael Assmair
+
 from networkx.algorithms.community import is_partition
 import numpy as np
 
 __all__ = ["modularity"]
 
+
 def modularity(G, communities):
-    """Berechnet die Modularität der Graphen G mit 
-    den übergebenen Communities
-    """
+    """Berechnet die Modulatität des Graphen G anhand
+    der übergebenen Liste von Communitys.
+
+    Parameters
+    ----------
+    G : Ein Networkx Graph
+
+    communities : Eines Liste, die beschreibt, wie der
+        Graph in Communitys aufgeteilt ist.
+    Returns
+    -------
+    modularity : Wert der die Güte der Aufteilung eines
+        Graphen in Communitys messt. Wenn die Übergebene Liste
+        der Communitys keine Partitionierung des Graphen G ist,
+        wird -1 als Wert zurückgegeben
 
     if not isinstance(communities, list):
         communities = list(communities)
