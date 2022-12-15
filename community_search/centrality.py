@@ -4,63 +4,85 @@
 
 import networkx as nx
 from collections import deque
-import timeit
 
-def girvan_newman(G: nx.Graph):
+
+def girvan_newman(G):
     """Algorithmus berechnet Communitys des Graphen G"""
 
-    g = G.copy().to_undirected()
-    num_communuties = nx.number_connected_components(g)
-
+    g = G.copy()
+    components = list(nx.connected_components(g))
 
     while g.number_of_edges() > 0:
-        betweenness = _edge_betweenness(g)
-        max_betweenness = max(betweenness, key=betweenness.get)
+        betweenness = dict()
 
+        for comp in components:
+            betweenness.update(_edge_betweenness(g.subgraph(comp)))
+
+        max_betweenness = max(betweenness, key=betweenness.get)
         g.remove_edge(max_betweenness[0], max_betweenness[1])
 
-        if num_communuties < nx.number_connected_components(g):
-            num_communuties = nx.number_connected_components(g)
-            yield nx.connected_components(g)
+        if len(components) < nx.number_connected_components(g):
+            components = list(nx.connected_components(g))
+            yield components
 
 
-def _edge_betweenness(G: nx.Graph):
-    """Edge Betweenness"""
+def _edge_betweenness(G):
+    """Berechnet die Edge Betweenness des Graphen G.
+    
+    Die Edge Betweenness wird wie in Brandes (2008) berechnet
 
+    Parameters
+    ----------
+    G : Gerichteter oder ungerichteter Graph, für den die 
+    Betweenness der Kanten berechnet wird.
+
+    Returns
+    -------
+    betweenness : Dictionary, welches für jede Kante (u, v) aus G
+    den Wert der Betweenness von (u, v) enthält.
+    """
     betweenness = {edge: 0.0 for edge in G.edges}
 
     for start_node in G.nodes:
-        nodes = {node: {"dist": None, "weight": None} for node in G.nodes}
-        edges = {edge: 0.0 for edge in G.edges}
+        nodes = {
+            node: {"dist": float("inf"), "weight": 0, "pred": [], "dependency": 0.0} 
+            for node in G.nodes
+            }
+
+        edges = {edge: 0.0 for edge in betweenness.keys()}
+
         nodes[start_node]["dist"] = 0
         nodes[start_node]["weight"] = 1
 
         queue = deque([start_node])
+        stack = deque()
 
         while queue:
             next_node = queue.popleft()
+            stack.append(next_node)
 
-            for adj_node in G.adj[next_node]:
+            for neighbor in G.neighbors(next_node):
+                if nodes[neighbor]["dist"] == float("inf"):
+                    nodes[neighbor]["dist"] = nodes[next_node]["dist"] + 1
+                    queue.append(neighbor)
 
-                if nodes[adj_node]["dist"] == None:
-                    nodes[adj_node]["dist"] = nodes[next_node]["dist"] + 1
-                    nodes[adj_node]["weight"] = nodes[next_node]["weight"]
-                    queue.append(adj_node)
-
-                elif nodes[adj_node]["dist"] == nodes[next_node]["dist"] + 1:
-                    nodes[adj_node]["weight"] += nodes[next_node]["weight"]
-
-        for node, _ in sorted(nodes.items(), key=lambda item: item[1]["dist"], reverse=True):
-            weight_sum = 1
-
-            for adj_node in G.adj[node]:
-                edge = (node, adj_node) if node < adj_node else (adj_node, node)
-                weight_sum += edges[edge]
+                if nodes[neighbor]["dist"] == nodes[next_node]["dist"] + 1:
+                    nodes[neighbor]["weight"] += nodes[next_node]["weight"]
+                    nodes[neighbor]["pred"].append(next_node)
+                    
+        while stack:
+            next_node = stack.pop()
             
-            for adj_node in G.adj[node]:
-                edge = (node, adj_node) if node < adj_node else (adj_node, node)
-                if nodes[node]["dist"] > nodes[adj_node]["dist"]:
-                    edges[edge] = weight_sum * nodes[adj_node]["weight"]/nodes[node]["weight"]
-                    betweenness[edge] += edges[edge]
+            for pred_node in nodes[next_node]["pred"]:
+                if (pred_node, next_node) in edges:
+                    edge = (pred_node, next_node)
+                else:
+                    edge = (next_node, pred_node)
+
+                dependency = ((nodes[pred_node]["weight"] / nodes[next_node]["weight"]) * 
+                              (1 + nodes[next_node]["dependency"]))
+
+                betweenness[edge] += dependency
+                nodes[pred_node]["dependency"] += dependency
 
     return betweenness
