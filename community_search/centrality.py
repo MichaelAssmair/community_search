@@ -7,23 +7,37 @@ from collections import deque
 
 
 def girvan_newman(G):
-    """Algorithmus berechnet Communitys des Graphen G"""
+    """Girvan-Newman-Alogrithmus
 
-    g = G.copy()
-    components = list(nx.connected_components(g))
+    Berechnet die Zerlegung von als Similarity Graphen
+    repräsentierten Daten, wie von Girvan u. Newman (2001) beschrieben.
+
+    Parameters
+    ----------
+    G : Gerichteter oder ungerichteter Graph, der für
+        die Berechnung der Communitys in einen ungerichteten
+        Graphen umgewandelt wir.
+
+    Returns
+    -------
+    communities : Generator der nacheinander den Graphen in
+        Communitys aufgeteilt ausgibt.
+    """
+
+    g = G.copy().to_undirected()
+    betweenness = {frozenset(edge): 0.0 for edge in g.edges}
+    num_components = nx.number_connected_components(g)
 
     while g.number_of_edges() > 0:
-        betweenness = dict()
-
-        for comp in components:
-            betweenness.update(_edge_betweenness(g.subgraph(comp)))
+        betweenness.update(_edge_betweenness(g))
 
         max_betweenness = max(betweenness, key=betweenness.get)
-        g.remove_edge(max_betweenness[0], max_betweenness[1])
+        betweenness[max_betweenness] = 0
+        g.remove_edge(*max_betweenness)
 
-        if len(components) < nx.number_connected_components(g):
-            components = list(nx.connected_components(g))
-            yield components
+        if num_components < nx.number_connected_components(g):
+            num_components = nx.number_connected_components(g)
+            yield list(nx.connected_components(g))
 
 
 def _edge_betweenness(G):
@@ -34,22 +48,20 @@ def _edge_betweenness(G):
     Parameters
     ----------
     G : Gerichteter oder ungerichteter Graph, für den die 
-    Betweenness der Kanten berechnet wird.
+        Betweenness der Kanten berechnet wird.
 
     Returns
     -------
     betweenness : Dictionary, welches für jede Kante (u, v) aus G
-    den Wert der Betweenness von (u, v) enthält.
+        den Wert der Betweenness von (u, v) enthält.
     """
-    betweenness = {edge: 0.0 for edge in G.edges}
+    betweenness = {frozenset(edge): 0.0 for edge in G.edges}
 
     for start_node in G.nodes:
         nodes = {
             node: {"dist": float("inf"), "weight": 0, "pred": [], "dependency": 0.0} 
             for node in G.nodes
             }
-
-        edges = {edge: 0.0 for edge in betweenness.keys()}
 
         nodes[start_node]["dist"] = 0
         nodes[start_node]["weight"] = 1
@@ -74,15 +86,10 @@ def _edge_betweenness(G):
             next_node = stack.pop()
             
             for pred_node in nodes[next_node]["pred"]:
-                if (pred_node, next_node) in edges:
-                    edge = (pred_node, next_node)
-                else:
-                    edge = (next_node, pred_node)
-
                 dependency = ((nodes[pred_node]["weight"] / nodes[next_node]["weight"]) * 
                               (1 + nodes[next_node]["dependency"]))
 
-                betweenness[edge] += dependency
+                betweenness[frozenset((next_node, pred_node))] += dependency
                 nodes[pred_node]["dependency"] += dependency
 
     return betweenness
