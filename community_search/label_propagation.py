@@ -77,3 +77,9 @@ def lpa_communities(G, weight=None, seed=None):
     communities = groups(labels).values()
 
     return communities
+
+
+def semi_sync_lpa(G: nx.Graph):
+    """semi-synchronous label propagation"""
+
+    pass
