@@ -5,6 +5,7 @@
 import random
 import networkx as nx
 from networkx.utils import groups
+from community_search import main
 
 __all__ = ["async_lpa", "semi_sync_lpa"]
 
