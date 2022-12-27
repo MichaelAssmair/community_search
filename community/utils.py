@@ -4,6 +4,7 @@
 
 from networkx.algorithms.community import is_partition
 import numpy as np
+import networkx as nx
 
 __all__ = ["modularity"]
 
@@ -55,3 +56,11 @@ def _idx_lookup(node, communities):
     for idx, community in enumerate(communities):
         if node in community:
             return idx
+
+
+def to_graphml_with_communities(G, communities, path):
+    for idx, community in enumerate(communities):
+        for node in community:
+            G.nodes[node][f"c{idx}"] = 1
+
+    nx.write_graphml(G, path)
