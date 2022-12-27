@@ -48,7 +48,7 @@ _STRATEGIES = {
 }
 
 
-def async_lpa(G: nx.Graph, weight=None, seed=None, strategy="lpa", to_undirectet=False):
+def async_lpa(G, weight=None, seed=None, strategy="lpa", to_undirected=False):
     """Sucht nach Communitys im Graphen G.
 
     Implementierung eines asynchronen Label propagation Algorithmus,
@@ -59,7 +59,7 @@ def async_lpa(G: nx.Graph, weight=None, seed=None, strategy="lpa", to_undirectet
     G : nx.Graph or nx.DiGraph
         Graph im Networkx-Format. Der Algorithmus funktioniert sowol
         mit gerichteten als auch mit ungerichteten Graphen. Bei gerichteten
-        Graphen werden, falls 'to_undirectet=False' nur die eingehenden
+        Graphen werden, falls 'to_undirected=False' nur die eingehenden
         Kanten für die Berechnung verwendet.
 
     weight : string or None
@@ -83,7 +83,7 @@ def async_lpa(G: nx.Graph, weight=None, seed=None, strategy="lpa", to_undirectet
         * "lpa_max"
         * "lpa_prec_max"
 
-    to_undirectet : bool
+    to_undirected : bool
         Wenn für den Parameter True übergeben wird und G ein gerichteter Graph ist,
         wird für die berechnung der Labels der Graph in einen ungerichteten Graph
         umgewandelt.
@@ -113,13 +113,13 @@ def async_lpa(G: nx.Graph, weight=None, seed=None, strategy="lpa", to_undirectet
     if strategy not in _STRATEGIES:
         raise ValueError
 
-    if to_undirectet and G.is_directed():
+    if to_undirected and G.is_directed():
         g = G.to_undirected(as_view=True)
     else:
         g = G
 
-    random.seed(seed)
-    
+    random.seed(seed)  
+
     nodes = list(g)
     labels = {node: label for label, node in enumerate(nodes)}
     
@@ -135,7 +135,7 @@ def async_lpa(G: nx.Graph, weight=None, seed=None, strategy="lpa", to_undirectet
     return communities
 
 
-def semi_sync_lpa(G, weight=None, strategy="lpa", to_undirectet=False):
+def semi_sync_lpa(G, weight=None, strategy="lpa", to_undirected=False):
     """Sucht nach Communitys im Graphen G.
 
     Implementierung eines semi-synchronen Label propagation Algorithmus,
@@ -146,7 +146,7 @@ def semi_sync_lpa(G, weight=None, strategy="lpa", to_undirectet=False):
     G : nx.Graph or nx.DiGraph
         Graph im Networkx-Format. Der Algorithmus funktioniert sowol
         mit gerichteten als auch mit ungerichteten Graphen. Bei gerichteten
-        Graphen werden, falls 'to_undirectet=False' nur die eingehenden
+        Graphen werden, falls 'to_undirected=False' nur die eingehenden
         Kanten für die Berechnung verwendet.
 
     weight : string or None
@@ -165,7 +165,7 @@ def semi_sync_lpa(G, weight=None, strategy="lpa", to_undirectet=False):
         * "lpa_max"
         * "lpa_prec_max"
 
-    to_undirectet : bool
+    to_undirected : bool
         Wenn für den Parameter True übergeben wird und G ein gerichteter Graph ist,
         wird für die berechnung der Labels der Graph in einen ungerichteten Graph
         umgewandelt.
@@ -192,7 +192,7 @@ def semi_sync_lpa(G, weight=None, strategy="lpa", to_undirectet=False):
     if strategy not in _STRATEGIES:
         raise ValueError
 
-    if to_undirectet and G.is_directed():
+    if to_undirected and G.is_directed():
         g = G.to_undirected(as_view=True)
     else:
         g = G
@@ -200,14 +200,10 @@ def semi_sync_lpa(G, weight=None, strategy="lpa", to_undirectet=False):
     labels = {node: label for label, node in enumerate(g)}
     coloring = groups(nx.algorithms.coloring.greedy_color(g))
 
-    #To-Do: Paralelle verarbeitung von Knoten, die mit der
-    #selben Farbe markiert wurden. multiprocessing oder concurrent.futures
-    #haben für die Erzeugung eines neuen Prozessen wahrscheinlich einen
-    #zu großen Overhead.
     while not _stop_criterion(g, labels, weight):
         for color in coloring.values():
-            for node in color:     
-                max_neighbor_labels = _get_max_labels(g, labels, weight, node)       
+            for node in color: 
+                max_neighbor_labels = _get_max_labels(g, labels, weight, node)
                 labels[node] = _STRATEGIES[strategy](labels[node], max_neighbor_labels)
 
     communities = list(groups(labels).values())
